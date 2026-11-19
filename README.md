@@ -11,7 +11,7 @@ combination and picks one best fit per combination you are interested in.
 uv add git+https://github.com/baltech-ag/morphtest.git
 ```
 
-Requires Python 3.11 – 3.13.
+Requires Python 3.11 or newer.
 
 ## Usage
 

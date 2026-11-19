@@ -39,6 +39,6 @@ uv run inv tests --testname X  # Run tests matching pattern X (pytest -k=X)
 
 - **mypy**: strict mode, `type-abstract` disabled (abstract components are passed as `type[...]` on purpose)
 - **ruff**: `select = ["ALL"]` with specific exclusions (see `pyproject.toml`). `N801` is disabled because component names contain `_`
-- Python 3.14 is not supported yet: `ComponentMeta` reads `namespace["__annotations__"]`, which PEP 649 removed from the class namespace
 - Tests define local component trees per test (`class Base(metaclass=ComponentMeta)`) so component names don't clash between tests. Components inheriting from `morphtest.Component` need globally unique root names
 - `TestCase` subclasses defined in tests stay alive (cached on the metaclass), so `TestSuite` tests restrict themselves with a condition on a local abstract group (`TestSuite(TestCase_MyGroup)`, or `.one_of` for a best fit within it)
+- Python 3.11+ is supported. Since 3.14 (PEP 649) the class namespace has no `__annotations__`, so `ComponentMeta` reads them via `inspect.get_annotations(cls)`. CI tests the oldest and newest version

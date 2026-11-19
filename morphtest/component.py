@@ -1,6 +1,7 @@
 import abc
 import dataclasses
 import functools
+import inspect
 import textwrap
 import typing
 from collections.abc import Iterable, Iterator, Mapping, Sequence
@@ -211,9 +212,11 @@ class ComponentMeta(abc.ABCMeta):
     def _init_own_dependencies(
         cls, namespace: dict[str, Any]
     ) -> dict[str, DependencyAnnotation]:
+        # not namespace["__annotations__"]: since Python 3.14 (PEP 649) the namespace
+        # only contains the lazy __annotate__ function
         dependencies = {
             name: dependency
-            for name, annotation in namespace.get("__annotations__", {}).items()
+            for name, annotation in inspect.get_annotations(cls).items()
             if (
                 dependency := DependencyAnnotation.from_annotation(
                     annotation, value=namespace.get(name)

@@ -3,7 +3,7 @@ name = "morphtest"
 version = "0.1.0"
 description = "Component framework with dependency injection, resolved by a SAT solver"
 readme = "README.md"
-requires-python = ">=3.11,<3.14"  # 3.14: ComponentMeta reads namespace["__annotations__"], which PEP 649 removed
+requires-python = ">=3.11"
 dependencies = [
   "python-sat>=1.9.dev17",
   "typing_extensions",
