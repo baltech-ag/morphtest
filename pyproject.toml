@@ -1,0 +1,113 @@
+[project]
+name = "morphtest"
+version = "0.1.0"
+description = "Component framework with dependency injection, resolved by a SAT solver"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"  # 3.14: ComponentMeta reads namespace["__annotations__"], which PEP 649 removed
+dependencies = [
+  "python-sat>=1.9.dev17",
+  "typing_extensions",
+]
+
+[dependency-groups]
+dev = [
+  "invoke",
+  "mypy",
+  "pytest",
+  "ruff",
+  "types-invoke",
+]
+
+[tool.uv]
+python-preference = "only-managed"
+required-version = ">=0.6.2"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["morphtest*"]
+
+[tool.setuptools.package-data]
+morphtest = ["py.typed"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+  "error",
+]
+
+[tool.mypy]
+strict = true
+# abstract components (entries, conditions) are passed as type[...] on purpose
+disable_error_code = ["type-abstract"]
+
+[[tool.mypy.overrides]]
+module = ["pysat", "pysat.*"]
+ignore_missing_imports = true
+
+
+[tool.ruff]
+target-version = "py311"
+format.skip-magic-trailing-comma = true
+
+
+[tool.ruff.lint]
+isort.split-on-trailing-comma = false
+# https://beta.ruff.rs/docs/rules/
+select = ["ALL"]
+ignore = [
+  # packcage specific
+  "AIR", "DJ", "NPY", "PD",
+  # annotations hanldled by mypy
+  "ANN",
+  # copyright notice
+  "CPY",
+  # pydocstyle
+  "D",
+  # flake8-errmsg: does not allow passing strings to Exceptions (e.g. Exception("foo"))
+  "EM",
+  # unused method argument: does not work with overridden methods
+  "ARG002", "ARG003",
+  # use of functools.cache/lru_cache can lead to memory leaks
+  "B019",
+  # trailing comma missing, handled by ruff format
+  "COM812",
+  # line too long handled by ruff format
+  "E501",
+  # multiple statements on one line
+  "E701",
+  # using f-string in logging
+  "G004",
+  # Implicitly concatenated string literals on one line handled by ruff format
+  "ISC001",
+  # CapWord convention for class names (required to allow Component name seperation `Base_Sub`)
+  "N801",
+  # unnecessary parantheses on raised exceptions
+  "RSE102",
+  # allow long messages when raising exceptions
+  "TRY003",
+]
+[tool.ruff.lint.per-file-ignores]
+"morphtest/*" = [
+  # multiple statements on one line
+  "E702",
+]
+"tests/*" = [
+  # multiple statements on one line
+  "E701",
+  # boolean positional argument: needed for parametrized tests
+  "FBT001",
+  # implicit namespace package
+  "INP001",
+  # allow magic values
+  "PLR2004",
+  # use asserts in tests
+  "S101",
+]
+"tasks.py" = [
+  # task named `tests` is mistaken for a pytest test
+  "PT",
+  # print used
+  "T201",
+]

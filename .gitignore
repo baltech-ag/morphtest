@@ -1,0 +1,13 @@
+.idea/
+!.idea/watcherTasks.xml
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.env
+components-overview.html
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
