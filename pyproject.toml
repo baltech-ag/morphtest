@@ -7,8 +7,8 @@ license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
-  "python-sat>=1.9.dev17",
-  "typer>=0.29.2",
+  "python-sat",
+  "typer",
   "typing_extensions",
 ]
 
@@ -23,7 +23,7 @@ dev = [
   "invoke",
   "pytest",
   "ruff",
-  "sybil[pytest]>=10.2.0",
+  "sybil[pytest]",
   "ty",
   "types-invoke",
 ]
