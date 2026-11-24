@@ -48,6 +48,11 @@ class ComponentSetSolver(Generic[C]):
 
         self._track_component_tree(self._entry_component)
 
+    @property
+    def components(self) -> frozenset[ComponentMeta]:
+        """all components reachable from the entry (bases, subclasses, dependencies)"""
+        return frozenset(self._tracked_components)
+
     def solve(self) -> Iterator[ComponentDependencySet[C]]:
         """
         Liefert pro Kombination der AllOf-Implementierungen (Gruppe) genau

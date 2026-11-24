@@ -1,13 +1,17 @@
 [project]
 name = "morphtest"
 version = "0.1.0"
-description = "Component framework with dependency injection, resolved by a SAT solver"
+description = "Test framework whose test matrices are resolved by a SAT solver"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
   "python-sat>=1.9.dev17",
+  "typer>=0.29.2",
   "typing_extensions",
 ]
+
+[project.scripts]
+morphtest = "morphtest.cli:app"
 
 [dependency-groups]
 dev = [

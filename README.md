@@ -145,6 +145,35 @@ best fit is the solution with the fewest components, then the smallest name. A
 subclass replaces the class variable of its base; extend it explicitly with
 `recommended_components = (*Base.recommended_components, X)`.
 
+### 3. Command line
+
+The `morphtest` command (also `python -m morphtest`) imports a **target** (a module
+like `pkg.components` or a file like `tests/devices.py`) and works with the components
+it defines or imports. Importing must not run anything, so keep `ts.run()` under
+`if __name__ == "__main__":`:
+
+```bash
+# run TestSuite(*conditions): Name, Name.all_of or Name.one_of
+morphtest run tests/devices.py TestCase Device
+morphtest run tests/devices.py TestCase_Any.one_of Chip_A
+
+# conditions, tests and component counts of the test suite `ts` defined in the target
+morphtest describe tests/suite.py
+
+# HTML tree of all components reachable from TestCase
+morphtest overview tests/devices.py                      # opens it in the browser
+morphtest overview tests/devices.py -o overview.html \
+    --source-url 'https://github.com/org/repo/blob/main/{path}#L{line}'
+```
+
+- `run` prints `[1/4] TestCase_Any[Chip=Chip_A, Device=Device_Big]` before each test.
+  The first failing test stops the run with its traceback (exit code 1).
+- Unknown components, a missing `ts` or a condition set without solution are reported
+  without traceback (exit code 2).
+- Without `--source-url`, the overview links to the local source files.
+- `morphtest --install-completion` installs shell completion, which also completes the
+  component names of the target.
+
 ## Component system
 
 ### Components and dependencies

@@ -48,7 +48,7 @@ class _OverviewWriter:
         self.source_url = source_url
         self.toggles = dict(toggles)
 
-    def write(self, meta_root: ComponentMeta) -> None:
+    def write(self, roots: Iterable[ComponentMeta]) -> None:
         w = self.html.write
         w(f"<html><head><style>{_STYLE}</style></head><body>")
 
@@ -70,9 +70,8 @@ class _OverviewWriter:
         w("</div>")
 
         w('<div style="width: 85%;">')
-        for component in self._sorted(meta_root.subclasses()):
-            if _primary_base(component) is meta_root:
-                self._write_tree(component)
+        for root in self._sorted(roots):
+            self._write_tree(root)
         w("</div>")
 
         w("<script>")
@@ -197,10 +196,11 @@ def _component_classes(component: ComponentMeta) -> list[str]:
     return classes
 
 
-def write_components_overview(
+def write_components_overview(  # noqa: PLR0913
     html: TextIO,
     meta_root: ComponentMeta = Component,
     *,
+    roots: Iterable[ComponentMeta] | None = None,
     entry_component: ComponentMeta | None = None,
     source_url: SourceUrl | None = None,
     toggles: Toggles | None = None,
@@ -208,22 +208,31 @@ def write_components_overview(
     """
     Writes an HTML overview of all (imported) components below meta_root.
 
+    roots: the root components to show instead of all roots below meta_root
+        (e.g. roots of several meta roots)
     entry_component: shown first and selected when the page is opened
     source_url: returns a link to the source of a component (e.g. on GitHub) or None
     toggles: label -> predicate; adds a checkbox per label which hides the matching components
     """
+    if roots is None:
+        roots = [
+            component
+            for component in meta_root.subclasses()
+            if _primary_base(component) is meta_root
+        ]
     _OverviewWriter(
         html,
         entry_component=entry_component,
         source_url=source_url,
         toggles=toggles or {},
-    ).write(meta_root)
+    ).write(roots)
 
 
-def save_components_overview(
+def save_components_overview(  # noqa: PLR0913
     path: Path | str,
     meta_root: ComponentMeta = Component,
     *,
+    roots: Iterable[ComponentMeta] | None = None,
     entry_component: ComponentMeta | None = None,
     source_url: SourceUrl | None = None,
     toggles: Toggles | None = None,
@@ -232,6 +241,7 @@ def save_components_overview(
         write_components_overview(
             html,
             meta_root,
+            roots=roots,
             entry_component=entry_component,
             source_url=source_url,
             toggles=toggles,
