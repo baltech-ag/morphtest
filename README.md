@@ -256,8 +256,9 @@ Enforced by the metaclass:
 - Root names are unique per meta root (`ComponentNameDuplicatedError`).
 
 Since names contain `_`, disable ruff's `N801` (or pep8-naming's equivalent) in projects
-using morphtest. Abstract components are passed as `type[...]` on purpose, so also
-disable mypy's `type-abstract` error code.
+using morphtest. Subclasses narrow a dependency by redeclaring its field, so with ty disable
+`incompatible-mutable-override` (with mypy: `type-abstract`, as abstract components are
+passed as `type[...]` on purpose).
 
 ### One implementation per root
 

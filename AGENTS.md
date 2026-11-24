@@ -20,9 +20,9 @@ TestCase, TestSuite) are documented in the README:
 ```bash
 uv run inv --list              # List all available tasks
 uv run inv all                 # Run lint + tests
-uv run inv lint                # Format (ruff format) + lint (ruff check --fix) + mypy + uv lock --check
+uv run inv lint                # Format (ruff format) + lint (ruff check --fix) + ty check + uv lock --check
 uv run inv lint --no-fix       # Check-only mode (no auto-fix)
-uv run inv lint --file path    # Lint single file (skips mypy, won't remove unused imports)
+uv run inv lint --file path    # Lint single file (skips ty, won't remove unused imports)
 uv run inv tests               # Run all unit tests (pytest tests/), then the README examples (pytest README.md)
 uv run inv tests --testname X  # Run tests matching pattern X (pytest -k=X)
 ```
@@ -39,7 +39,7 @@ uv run inv tests --testname X  # Run tests matching pattern X (pytest -k=X)
 
 ## Code Quality
 
-- **mypy**: strict mode, `type-abstract` disabled (abstract components are passed as `type[...]` on purpose)
+- **ty** (Astral type checker): `incompatible-mutable-override` disabled, because subclasses narrow dependencies by redeclaring the field. ty does not require annotations, ruff's `ANN` rules do (only `ANN401` for `Any` is ignored). Suppress single ty errors with `# ty: ignore[rule]`, not mypy's `# type: ignore[code]`
 - **ruff**: `select = ["ALL"]` with specific exclusions (see `pyproject.toml`). `N801` is disabled because component names contain `_`
 - Tests define local component trees per test (`class Base(metaclass=ComponentMeta)`) so component names don't clash between tests. Components inheriting from `morphtest.Component` need globally unique root names
 - `TestCase` subclasses defined in tests stay alive (cached on the metaclass), so `TestSuite` tests restrict themselves with a condition on a local abstract group (`TestSuite(TestCase_MyGroup)`, or `.one_of` for a best fit within it)

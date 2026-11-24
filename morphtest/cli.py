@@ -8,7 +8,7 @@ import sys
 import tempfile
 import webbrowser
 from collections import Counter
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from types import ModuleType
@@ -50,7 +50,7 @@ class CliError(Exception):
 
 
 @contextmanager
-def _report_errors() -> Iterator[None]:
+def _report_errors() -> Generator[None]:
     try:
         yield
     except (CliError, NoSolutionError) as e:

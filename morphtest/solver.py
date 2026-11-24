@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator, Sequence
-from typing import Generic, Literal, TypeVar
+from typing import Generic, Literal, TypeVar, cast
 
 import pysat.solvers
 
@@ -35,7 +35,7 @@ class ComponentSetSolver(Generic[C]):
         recommended_components: Sequence[ComponentMeta] | PerEntry = (),
         sat_solver: SatSolver = "minisat22",
     ) -> None:
-        self._entry_component: ComponentMeta = entry_component  # type: ignore[assignment]
+        self._entry_component = cast("ComponentMeta", entry_component)
         self._conditions = frozenset(conditions)
         self._recommended_components = recommended_components
         self._sat_solver = sat_solver
@@ -110,7 +110,7 @@ class ComponentSetSolver(Generic[C]):
     def _recommended_for(
         self, model: list[int], lookup: dict[int, ComponentMeta]
     ) -> list[ComponentMeta]:
-        if not callable(self._recommended_components):
+        if isinstance(self._recommended_components, Sequence):
             return list(self._recommended_components)
         entry_implementation = self._depset(
             {lookup[lit] for lit in model if lit > 0}, []
@@ -164,7 +164,7 @@ class ComponentSetSolver(Generic[C]):
         self, components: set[ComponentMeta], recommended: Sequence[ComponentMeta]
     ) -> ComponentDependencySet[C]:
         return ComponentDependencySet(
-            self._entry_component,  # type: ignore[arg-type]
+            cast("type[C]", self._entry_component),
             (
                 component
                 for component in components

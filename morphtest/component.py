@@ -4,7 +4,7 @@ import functools
 import inspect
 import textwrap
 import typing
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
 from contextlib import AbstractContextManager, contextmanager
 from typing import (
     Annotated,
@@ -28,7 +28,8 @@ Dependency = Annotated[D, _DEPENDENCY_MARKER]
 
 
 def if_not_overwritten(component: type[D]) -> D:
-    return component  # type: ignore[return-value]
+    # the default is a component class, typed as its instance like the dependency
+    return component  # ty: ignore[invalid-explicit-return]
 
 
 class DependencyAnnotation(NamedTuple):
@@ -357,7 +358,7 @@ class ComponentMeta(abc.ABCMeta):
                 f"""{klass} got unexpected keyword arguments: {", ".join(f"'{a}'" for a in sorted(unexpected))}"""
             )
 
-        obj: object = object.__new__(klass)  # type: ignore[arg-type]
+        obj: object = object.__new__(klass)
         cls.InstanceData[obj] = kwargs
         return obj
 
@@ -378,7 +379,10 @@ class ComponentMeta(abc.ABCMeta):
         return f"{type(obj)}({deps})"
 
 
-def mixin(cls: ComponentMeta) -> ComponentMeta:
+ComponentT = TypeVar("ComponentT", bound=ComponentMeta)
+
+
+def mixin(cls: ComponentT) -> ComponentT:
     if not cls.is_abstract:
         raise NonAbstractMixinError(cls)
 
@@ -414,7 +418,7 @@ class ComponentDependencySet(Generic[C]):
     ) -> None:
         # ComponentMeta[C] is not supported so the parameter must be type[C]
         # but we need it as ComponentMeta internally, so that all other type hints work.
-        self._entry_component: ComponentMeta = entry_component  # type: ignore[assignment]
+        self._entry_component = cast("ComponentMeta", entry_component)
         self._implementations = {
             root: implementation
             for implementation in implementations
@@ -452,9 +456,12 @@ class ComponentDependencySet(Generic[C]):
         return hash(str(self))
 
     def build(self, *, instances: dict[ComponentMeta, Instance] | None = None) -> C:
-        return self._get_instance(
-            self._entry_component, instances={} if instances is None else instances
-        )  # type: ignore[return-value]
+        return cast(
+            "C",
+            self._get_instance(
+                self._entry_component, instances={} if instances is None else instances
+            ),
+        )
 
     def implementations(self) -> Iterator[ComponentMeta]:
         yield from self._implementations.values()
@@ -542,7 +549,7 @@ class ConditionsBuilder(Generic[M]):
         return self._context(ctx)
 
     @contextmanager
-    def _context(self, ctx: _BuilderContext[M]) -> Iterator[None]:
+    def _context(self, ctx: _BuilderContext[M]) -> Generator[None]:
         prev_context = self._active_context
         self._active_context = ctx
 

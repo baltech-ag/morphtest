@@ -169,7 +169,7 @@ class TestComponentMeta:
         # fmt: on
 
         with pytest.raises(TypeError):
-            Implementation()  # type: ignore[call-arg]
+            Implementation()  # ty: ignore[missing-argument]
 
     def test_init_raises_type_error_on_unknown_dependency(self) -> None:
         # fmt: off
@@ -178,7 +178,7 @@ class TestComponentMeta:
         # fmt: on
 
         with pytest.raises(TypeError):
-            Implementation(dep=Component())  # type: ignore[call-arg]
+            Implementation(dep=Component())  # ty: ignore[unknown-argument]
 
     def test_init_calls_init_from_superclasses(self) -> None:
         # fmt: off
@@ -261,7 +261,7 @@ class TestComponentMeta:
 
         with pytest.raises(ComponentNameDuplicatedError):
 
-            class MustBeUnique(Component):  # type: ignore[no-redef]
+            class MustBeUnique(Component):
                 pass
 
     def test_component_names_can_be_duplicated_when_within_different_components(

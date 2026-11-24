@@ -2,7 +2,7 @@ import abc
 import difflib
 from collections.abc import Iterable, Iterator, Sequence
 from contextlib import AbstractContextManager
-from typing import Any, ClassVar, Generic, TypedDict, TypeVar, cast, overload
+from typing import ClassVar, Generic, TypedDict, TypeVar, cast
 
 from morphtest.component import (
     Component,
@@ -77,9 +77,9 @@ def group_depsets_by(
         depset: tuple[ComponentDependencySet[C], int],
     ) -> tuple[tuple[int, str], ...]:
         depset_group_by = (
-            group_by(depset[0].entry_implementation())
-            if callable(group_by)
-            else group_by
+            group_by
+            if isinstance(group_by, Sequence)
+            else group_by(depset[0].entry_implementation())
         )
         return tuple(
             sorted(
@@ -117,26 +117,6 @@ class BaseTestSuite(Generic[C]):
 
     __test__ = False  # not a pytest test class
 
-    @overload
-    def __init__(
-        self: "BaseTestSuite[C]",
-        entry: type[C],
-        *conditions: ConditionLike,
-        repeat: int = 1,
-        recommended_components: Sequence[ComponentMeta] | PerEntry = (),
-        group_by: Sequence[ComponentMeta] | PerEntry = (),
-        sat_solver: SatSolver = "minisat22",
-    ) -> None: ...
-    @overload
-    def __init__(
-        self: "BaseTestSuite[Any]",
-        entry: Condition,
-        *conditions: ConditionLike,
-        repeat: int = 1,
-        recommended_components: Sequence[ComponentMeta] | PerEntry = (),
-        group_by: Sequence[ComponentMeta] | PerEntry = (),
-        sat_solver: SatSolver = "minisat22",
-    ) -> None: ...
     def __init__(
         self,
         entry: type[C] | Condition,

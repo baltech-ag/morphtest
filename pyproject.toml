@@ -21,10 +21,10 @@ morphtest = "morphtest.cli:app"
 [dependency-groups]
 dev = [
   "invoke",
-  "mypy",
   "pytest",
   "ruff",
   "sybil[pytest]>=10.2.0",
+  "ty",
   "types-invoke",
 ]
 
@@ -47,15 +47,10 @@ filterwarnings = [
   "error",
 ]
 
-[tool.mypy]
-strict = true
-# abstract components (entries, conditions) are passed as type[...] on purpose
-disable_error_code = ["type-abstract"]
-
-[[tool.mypy.overrides]]
-module = ["pysat", "pysat.*"]
-ignore_missing_imports = true
-
+[tool.ty.rules]
+# a subclass narrows a dependency by redeclaring the field (chip: Dependency[Chip_A]),
+# dependencies are never assigned
+incompatible-mutable-override = "ignore"
 
 [tool.ruff]
 target-version = "py311"
@@ -67,8 +62,8 @@ isort.split-on-trailing-comma = false
 # https://beta.ruff.rs/docs/rules/
 select = ["ALL"]
 ignore = [
-  # annotations handled by mypy
-  "ANN",
+  # Any is needed for the dynamic attributes of ComponentMeta and pytest kwargs
+  "ANN401",
   # copyright notice
   "CPY",
   # pydocstyle

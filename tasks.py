@@ -24,7 +24,7 @@ def lint(ctx: Context, *, fix: bool = True, file: str | None = None) -> None:
     ).ok
 
     if file is None:
-        ok &= ctx.run(f"uv run mypy {ProjectRootPath}", warn=True).ok
+        ok &= ctx.run(f"uv run ty check {ProjectRootPath}", warn=True).ok
         ok &= ctx.run("uv lock --check", warn=True).ok
 
     if not ok:
