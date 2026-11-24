@@ -74,6 +74,8 @@ class TestCase_NeedsChip(TestCase_OnDevice):
 A test file defines the test suite `ts`. Its conditions are the components to fan out
 over:
 
+<!-- skip: next "the README examples share one namespace, there is no components module" -->
+
 ```python
 # test_devices.py
 from components import Device
@@ -93,7 +95,28 @@ test_devices.py::ts[TestCase_NeedsChip[Chip=Chip_A, Device=Device_Big]] PASSED
 test_devices.py::ts[TestCase_Any[Chip=Chip_None, Device=Device_Small]] PASSED
 ```
 
-`TestCase_NeedsChip` cannot run on `Device_Small`, which has no `Chip_A`.
+`TestCase_NeedsChip` cannot run on `Device_Small`, which has no `Chip_A`. The tests are
+the depsets of the suite:
+
+```python
+>>> from morphtest import TestSuite
+>>> ts = TestSuite(TestCase, Device)
+>>> for depset in ts:
+...     print(depset)
+TestCase_Any[Chip=Chip_A, Device=Device_Big]
+TestCase_NeedsChip[Chip=Chip_A, Device=Device_Big]
+TestCase_Any[Chip=Chip_None, Device=Device_Small]
+```
+
+Without pytest, `ts.run()` builds every test case and calls its `run()`; the first
+exception stops the suite:
+
+```python
+>>> ts.run()
+TestCase_Any on Device_Big with Chip_A
+TestCase_NeedsChip on Device_Big with Chip_A
+TestCase_Any on Device_Small with Chip_None
+```
 
 - `TestSuite(TestCase_Any, Device)` would only run `TestCase_Any`; `TestSuite(Device)`
   runs one best fitting test case per device, as `TestCase` is resolved like every
@@ -105,9 +128,6 @@ test_devices.py::ts[TestCase_Any[Chip=Chip_None, Device=Device_Small]] PASSED
 - pytest only rewrites `assert` statements of test files. For detailed assertion
   messages from test cases in component modules, register them in `conftest.py`:
   `pytest.register_assert_rewrite("components")`.
-- Without pytest, `ts.run()` builds every test case and calls its `run()`; the first
-  exception stops the suite. Iterating the suite yields the `ComponentDependencySet`s,
-  e.g. `TestCase_Any[Chip=Chip_A, Device=Device_Big]`.
 
 ### 3. Recommended components and grouping
 
@@ -118,42 +138,48 @@ common base so all test cases are sorted the same way:
 
 ```python
 # components.py
-class Device(Component, abc.ABC): ...
+class Board(Component, abc.ABC): ...
 
 
-class Device_Small(Device): ...
+class Board_Small(Board): ...
 
 
-class Device_Big(Device): ...
+class Board_Big(Board): ...
 
 
-class TestCase_OnDevice(TestCase, abc.ABC):
-    device: Dependency[Device]
-    group_by = (Device,)  # all tests of a device run consecutively
+class TestCase_OnBoard(TestCase, abc.ABC):
+    board: Dependency[Board]
+    group_by = (Board,)  # all tests of a board run consecutively
+
+    def run(self) -> None: ...
 
 
-class TestCase_A(TestCase_OnDevice): ...
+class TestCase_A(TestCase_OnBoard): ...
 
 
-class TestCase_B(TestCase_OnDevice):
-    recommended_components = (Device_Small,)
+class TestCase_B(TestCase_OnBoard):
+    recommended_components = (Board_Small,)
 ```
 
-`ts = TestSuite(TestCase, Device)` fans out over the devices and runs, grouped by
-device:
+Fanned out over the boards, the tests are grouped by board:
 
-```
-TestCase_A[Device=Device_Big]
-TestCase_B[Device=Device_Big]
-TestCase_A[Device=Device_Small]
-TestCase_B[Device=Device_Small]
+```python
+>>> for depset in TestSuite(TestCase, Board):
+...     print(depset)
+TestCase_A[Board=Board_Big]
+TestCase_B[Board=Board_Big]
+TestCase_A[Board=Board_Small]
+TestCase_B[Board=Board_Small]
 ```
 
-`ts = TestSuite(TestCase)` runs every test case once on its best fitting device:
+Without fan-out over the boards, every test case runs once on its best fitting board
+(`TestSuite(TestCase)` would also include the test cases of section 1):
 
-```
-TestCase_A[Device=Device_Big]
-TestCase_B[Device=Device_Small]
+```python
+>>> for depset in TestSuite(TestCase_OnBoard):
+...     print(depset)
+TestCase_A[Board=Board_Big]
+TestCase_B[Board=Board_Small]
 ```
 
 `recommended_components` is applied in list order. Without a recommendation, the
@@ -254,6 +280,8 @@ each viable choice is a different solution.
 
 ### `if_not_overwritten(Default)`: default dependencies
 
+<!-- skip: next "fragment" -->
+
 ```python
 class Device(Component, abc.ABC):
     chip: Dependency[Chip] = if_not_overwritten(Chip_None)
@@ -332,6 +360,8 @@ Everything that is not an `AllOf` condition is **not** enumerated exhaustively; 
 collapses to the best fit.
 
 ## Test suites (`morphtest.suite`)
+
+<!-- skip: next "fragment" -->
 
 ```python
 ts = TestSuite(Device)  # conditions of all leafs

@@ -23,7 +23,7 @@ uv run inv all                 # Run lint + tests
 uv run inv lint                # Format (ruff format) + lint (ruff check --fix) + mypy + uv lock --check
 uv run inv lint --no-fix       # Check-only mode (no auto-fix)
 uv run inv lint --file path    # Lint single file (skips mypy, won't remove unused imports)
-uv run inv tests               # Run all unit tests (pytest tests/)
+uv run inv tests               # Run all unit tests (pytest tests/), then the README examples (pytest README.md)
 uv run inv tests --testname X  # Run tests matching pattern X (pytest -k=X)
 ```
 
@@ -44,4 +44,5 @@ uv run inv tests --testname X  # Run tests matching pattern X (pytest -k=X)
 - Tests define local component trees per test (`class Base(metaclass=ComponentMeta)`) so component names don't clash between tests. Components inheriting from `morphtest.Component` need globally unique root names
 - `TestCase` subclasses defined in tests stay alive (cached on the metaclass), so `TestSuite` tests restrict themselves with a condition on a local abstract group (`TestSuite(TestCase_MyGroup)`, or `.one_of` for a best fit within it)
 - `test_pytest_plugin.py` runs pytest via `pytester.runpytest_subprocess`, so the components of the test projects never leak into the test session
+- The ```python blocks of README.md are tests (Sybil, hooked in the root `conftest.py`): plain blocks are executed, blocks starting with `>>>` are doctests, `<!-- skip: next "reason" -->` skips a block. All blocks share one namespace, so README components need unique root names. The README runs in its own pytest process (`pytest README.md`), separate from the unit tests
 - Python 3.11+ is supported. Since 3.14 (PEP 649) the class namespace has no `__annotations__`, so `ComponentMeta` reads them via `inspect.get_annotations(cls)`. CI tests the oldest and newest version

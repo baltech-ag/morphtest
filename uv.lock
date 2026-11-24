@@ -268,6 +268,7 @@ dev = [
     { name = "mypy" },
     { name = "pytest" },
     { name = "ruff" },
+    { name = "sybil", extra = ["pytest"] },
     { name = "types-invoke" },
 ]
 
@@ -284,6 +285,7 @@ dev = [
     { name = "mypy" },
     { name = "pytest" },
     { name = "ruff" },
+    { name = "sybil", extras = ["pytest"], specifier = ">=10.2.0" },
     { name = "types-invoke" },
 ]
 
@@ -676,6 +678,20 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68a0e064b6af791aa332cf192da575fd474ed7d6f16a2/six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81", size = 34031, upload-time = "2024-12-04T17:35:28.174Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274", size = 11050, upload-time = "2024-12-04T17:35:26.475Z" },
+]
+
+[[package]]
+name = "sybil"
+version = "10.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/70/8a/0be1965fde349571cd31b4e9c993f9716bd9d2ff9827fed5ee780de392bd/sybil-10.2.0.tar.gz", hash = "sha256:b2a41dd63aad5f6a348d95b1e957361df2bd0f5d88db071b14854411cb4cdecd", size = 86597, upload-time = "2026-11-22T15:19:22.706Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0f/9d/3acf537c2bcb5a5e3ade95f9645439eeb1c26435e766c6ad65a87c500f5f/sybil-10.2.0-py3-none-any.whl", hash = "sha256:21d1d3ca56f40bac5d05cf6d7719a53b8ee8265c13cc151014ea4cf296d7abe5", size = 41512, upload-time = "2026-11-22T15:19:21.594Z" },
+]
+
+[package.optional-dependencies]
+pytest = [
+    { name = "pytest" },
 ]
 
 [[package]]

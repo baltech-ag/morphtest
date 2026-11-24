@@ -33,8 +33,10 @@ def lint(ctx: Context, *, fix: bool = True, file: str | None = None) -> None:
 
 @task()
 def tests(ctx: Context, testname: str | None = None) -> None:
-    """runs unit tests"""
+    """runs unit tests and the examples of README.md"""
     ctx.run(f"pytest {ProjectRootPath}/tests -k={testname or ''}")
+    # own process: components of the README must not mix with those of the unit tests
+    ctx.run(f"pytest {ProjectRootPath}/README.md -k={testname or ''}")
 
 
 @task(pre=[lint, tests])
