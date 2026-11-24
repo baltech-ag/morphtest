@@ -67,9 +67,7 @@ isort.split-on-trailing-comma = false
 # https://beta.ruff.rs/docs/rules/
 select = ["ALL"]
 ignore = [
-  # packcage specific
-  "AIR", "DJ", "NPY", "PD",
-  # annotations hanldled by mypy
+  # annotations handled by mypy
   "ANN",
   # copyright notice
   "CPY",
@@ -77,37 +75,23 @@ ignore = [
   "D",
   # flake8-errmsg: does not allow passing strings to Exceptions (e.g. Exception("foo"))
   "EM",
-  # unused method argument: does not work with overridden methods
-  "ARG002", "ARG003",
   # use of functools.cache/lru_cache can lead to memory leaks
   "B019",
   # trailing comma missing, handled by ruff format
   "COM812",
   # line too long handled by ruff format
   "E501",
-  # multiple statements on one line
-  "E701",
   # using f-string in logging
   "G004",
-  # Implicitly concatenated string literals on one line handled by ruff format
-  "ISC001",
-  # CapWord convention for class names (required to allow Component name seperation `Base_Sub`)
+  # CapWord convention for class names (required to allow Component name separation `Base_Sub`)
   "N801",
-  # unnecessary parantheses on raised exceptions
-  "RSE102",
   # allow long messages when raising exceptions
   "TRY003",
 ]
 [tool.ruff.lint.per-file-ignores]
-"morphtest/*" = [
-  # multiple statements on one line
-  "E702",
-]
 "tests/*" = [
   # multiple statements on one line
   "E701",
-  # boolean positional argument: needed for parametrized tests
-  "FBT001",
   # implicit namespace package
   "INP001",
   # allow magic values
@@ -118,6 +102,4 @@ ignore = [
 "tasks.py" = [
   # task named `tests` is mistaken for a pytest test
   "PT",
-  # print used
-  "T201",
 ]
