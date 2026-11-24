@@ -15,16 +15,24 @@ Requires Python 3.11 or newer.
 
 ## Usage
 
-### 1. Test cases
+The recommended layout separates **what exists** from **what is tested**:
+
+- **Component modules** define all components: the things the tests run on and the
+  test cases themselves.
+- **Test files** (`test_*.py`) only build a test suite `ts`, which selects the
+  combinations to test. pytest runs one test per combination.
+
+### 1. Components and test cases
 
 Components inherit from `morphtest.Component` and declare their dependencies with
-`Dependency[...]`. Test cases inherit from `morphtest.TestCase` and implement `run()`.
-A `TestSuite` resolves one test per valid combination:
+`Dependency[...]`. Test cases inherit from `morphtest.TestCase` and implement `run()`;
+an exception (e.g. a failing `assert`) fails the test:
 
 ```python
+# components.py
 import abc
 
-from morphtest import Component, Dependency, TestCase, TestSuite, if_not_overwritten
+from morphtest import Component, Dependency, TestCase, if_not_overwritten
 
 
 class Chip(Component, abc.ABC): ...
@@ -59,31 +67,49 @@ class TestCase_Any(TestCase_OnDevice): ...
 
 class TestCase_NeedsChip(TestCase_OnDevice):
     chip: Dependency[Chip_A]
-
-
-if __name__ == "__main__":
-    TestSuite(TestCase, Device).run()  # every test case on every (matching) device
 ```
 
-prints (`TestCase_NeedsChip` cannot run on `Device_Small`, which has no `Chip_A`):
+### 2. Test suites
+
+A test file defines the test suite `ts`. Its conditions are the components to fan out
+over:
+
+```python
+# test_devices.py
+from components import Device
+
+from morphtest import TestCase, TestSuite
+
+ts = TestSuite(TestCase, Device)  # every test case on every (matching) device
+```
+
+morphtest's pytest plugin (installed with morphtest) creates one pytest test per
+combination:
 
 ```
-TestCase_Any on Device_Big with Chip_A
-TestCase_NeedsChip on Device_Big with Chip_A
-TestCase_Any on Device_Small with Chip_None
+$ pytest -v
+test_devices.py::ts[TestCase_Any[Chip=Chip_A, Device=Device_Big]] PASSED
+test_devices.py::ts[TestCase_NeedsChip[Chip=Chip_A, Device=Device_Big]] PASSED
+test_devices.py::ts[TestCase_Any[Chip=Chip_None, Device=Device_Small]] PASSED
 ```
 
-- The conditions are the components to fan out over: one test per valid combination
-  of a `TestCase` and a `Device` implementation. `TestSuite(TestCase_Any, Device)`
-  would only run `TestCase_Any`; `TestSuite(Device)` runs one best fitting test case
-  per device, as `TestCase` is resolved like every other component.
-- `ts.run()` builds every test case and calls its `run()`; an exception fails it and
-  stops the suite. Call it only under `if __name__ == "__main__":`, so importing the
-  file (e.g. by the `morphtest` command) defines the components without running them.
-- Iterating the suite yields the `ComponentDependencySet`s, e.g.
-  `TestCase_Any[Chip=Chip_A, Device=Device_Big]`.
+`TestCase_NeedsChip` cannot run on `Device_Small`, which has no `Chip_A`.
 
-### 2. Recommended components and grouping
+- `TestSuite(TestCase_Any, Device)` would only run `TestCase_Any`; `TestSuite(Device)`
+  runs one best fitting test case per device, as `TestCase` is resolved like every
+  other component.
+- Only a test suite named `ts` is collected. Repeated tests (`repeat=`) get a `#2`,
+  `#3`, … suffix. pytest options work as usual, e.g. `-k Device_Small`.
+- A suite without solution is reported as collection error of its file, with the
+  diagnosis of `NoSolutionError`.
+- pytest only rewrites `assert` statements of test files. For detailed assertion
+  messages from test cases in component modules, register them in `conftest.py`:
+  `pytest.register_assert_rewrite("components")`.
+- Without pytest, `ts.run()` builds every test case and calls its `run()`; the first
+  exception stops the suite. Iterating the suite yields the `ComponentDependencySet`s,
+  e.g. `TestCase_Any[Chip=Chip_A, Device=Device_Big]`.
+
+### 3. Recommended components and grouping
 
 Components that are not fanned out collapse to a best fit. A test case states which
 implementations it prefers with the class variable `recommended_components`.
@@ -91,11 +117,7 @@ implementations it prefers with the class variable `recommended_components`.
 common base so all test cases are sorted the same way:
 
 ```python
-import abc
-
-from morphtest import Component, Dependency, TestCase, TestSuite
-
-
+# components.py
 class Device(Component, abc.ABC): ...
 
 
@@ -109,35 +131,29 @@ class TestCase_OnDevice(TestCase, abc.ABC):
     device: Dependency[Device]
     group_by = (Device,)  # all tests of a device run consecutively
 
-    def run(self) -> None:
-        print(f"{self} on {self.device}")
-
 
 class TestCase_A(TestCase_OnDevice): ...
 
 
 class TestCase_B(TestCase_OnDevice):
     recommended_components = (Device_Small,)
-
-
-if __name__ == "__main__":
-    # all test cases on all devices, grouped by device
-    TestSuite(TestCase, Device).run()
-    print("---")
-    # one device per test case: the best fit
-    TestSuite(TestCase).run()
 ```
 
-prints:
+`ts = TestSuite(TestCase, Device)` fans out over the devices and runs, grouped by
+device:
 
 ```
-TestCase_A on Device_Big
-TestCase_B on Device_Big
-TestCase_A on Device_Small
-TestCase_B on Device_Small
----
-TestCase_A on Device_Big
-TestCase_B on Device_Small
+TestCase_A[Device=Device_Big]
+TestCase_B[Device=Device_Big]
+TestCase_A[Device=Device_Small]
+TestCase_B[Device=Device_Small]
+```
+
+`ts = TestSuite(TestCase)` runs every test case once on its best fitting device:
+
+```
+TestCase_A[Device=Device_Big]
+TestCase_B[Device=Device_Small]
 ```
 
 `recommended_components` is applied in list order. Without a recommendation, the
@@ -145,24 +161,24 @@ best fit is the solution with the fewest components, then the smallest name. A
 subclass replaces the class variable of its base; extend it explicitly with
 `recommended_components = (*Base.recommended_components, X)`.
 
-### 3. Command line
+### 4. Command line
 
 The `morphtest` command (also `python -m morphtest`) imports a **target** (a module
-like `pkg.components` or a file like `tests/devices.py`) and works with the components
-it defines or imports. Importing must not run anything, so keep `ts.run()` under
-`if __name__ == "__main__":`:
+like `pkg.components` or a file like `tests/test_devices.py`) and works with the
+components it defines or imports. Importing must not run anything, so a file calling
+`ts.run()` keeps it under `if __name__ == "__main__":`.
 
 ```bash
-# run TestSuite(*conditions): Name, Name.all_of or Name.one_of
-morphtest run tests/devices.py TestCase Device
-morphtest run tests/devices.py TestCase_Any.one_of Chip_A
+# run TestSuite(*conditions) ad hoc: Name, Name.all_of or Name.one_of
+morphtest run components.py TestCase Device
+morphtest run components.py TestCase_Any.one_of Chip_A
 
-# conditions, tests and component counts of the test suite `ts` defined in the target
-morphtest describe tests/suite.py
+# conditions, tests and component counts of the test suite `ts` of a test file
+morphtest describe test_devices.py
 
 # HTML tree of all components reachable from TestCase
-morphtest overview tests/devices.py                      # opens it in the browser
-morphtest overview tests/devices.py -o overview.html \
+morphtest overview components.py                         # opens it in the browser
+morphtest overview components.py -o overview.html \
     --source-url 'https://github.com/org/repo/blob/main/{path}#L{line}'
 ```
 
