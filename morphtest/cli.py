@@ -1,6 +1,5 @@
 """Command line interface: `morphtest run`, `morphtest describe` and `morphtest overview`."""
 
-import difflib
 import importlib
 import importlib.util
 import inspect
@@ -26,7 +25,15 @@ from morphtest.component import (
 )
 from morphtest.overview import save_components_overview
 from morphtest.solver import ComponentSetSolver
-from morphtest.suite import BaseTestSuite, NoSolutionError, TestCase, TestSuite
+from morphtest.suite import (
+    BaseTestSuite,
+    NoSolutionError,
+    TestCase,
+    TestSuite,
+    UnknownComponentError,
+    components_by_name,
+    find_component,
+)
 
 EXIT_USAGE_ERROR = 2
 
@@ -109,14 +116,6 @@ _SUFFIXES: dict[str, Callable[[ComponentMeta], ConditionLike]] = {
 }
 
 
-def _components_by_name() -> dict[str, list[ComponentMeta]]:
-    """all components a TestSuite can use (reachable from TestCase), by name"""
-    components: dict[str, list[ComponentMeta]] = {}
-    for component in ComponentSetSolver(TestCase).components:
-        components.setdefault(str(component), []).append(component)
-    return components
-
-
 def parse_condition(text: str) -> ConditionLike:
     """`Name`, `Name.all_of` or `Name.one_of`"""
     name, _, suffix = text.partition(".")
@@ -125,16 +124,11 @@ def parse_condition(text: str) -> ConditionLike:
             f"unknown suffix .{suffix} in {text} (allowed: .all_of, .one_of)"
         )
 
-    components = _components_by_name()
-    if name not in components:
-        close = difflib.get_close_matches(name, components, n=5)
-        hint = f" (did you mean: {', '.join(close)}?)" if close else ""
-        raise CliError(f"unknown component {name}{hint}")
-    if len(candidates := components[name]) > 1:
-        modules = ", ".join(sorted(f"{c.__module__}.{c}" for c in candidates))
-        raise CliError(f"ambiguous component {name}: {modules}")
-
-    return _SUFFIXES[suffix](candidates[0])
+    try:
+        component = find_component(name)
+    except UnknownComponentError as e:
+        raise CliError(str(e)) from e
+    return _SUFFIXES[suffix](component)
 
 
 def condition_completions(target: str, incomplete: str) -> list[str]:
@@ -145,7 +139,7 @@ def condition_completions(target: str, incomplete: str) -> list[str]:
         return []
     candidates = (
         f"{name}.{suffix}" if suffix else name
-        for name in sorted(_components_by_name())
+        for name in sorted(components_by_name())
         for suffix in _SUFFIXES
     )
     return [candidate for candidate in candidates if candidate.startswith(incomplete)]

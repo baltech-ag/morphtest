@@ -1,7 +1,8 @@
 """
 pytest plugin (registered via the pytest11 entry point): every test module defining a
 TestSuite `ts` gets one pytest test per depset, e.g.
-`test_devices.py::ts[TestCase_Any[Chip=Chip_A, Device=Device_Big]]`.
+`test_devices.py::ts[TestCase_Any[Chip=Chip_A, Device=Device_Big]]`. `--component NAME`
+selects only the tests whose depset contains that component.
 """
 
 from collections import Counter
@@ -12,7 +13,13 @@ import pytest
 from _pytest._code import Code, Traceback
 
 from morphtest.component import ComponentDependencySet
-from morphtest.suite import NoSolutionError, TestCase, TestSuite
+from morphtest.suite import (
+    NoSolutionError,
+    TestCase,
+    TestSuite,
+    UnknownComponentError,
+    find_component,
+)
 
 SUITE_NAME = "ts"
 
@@ -73,3 +80,44 @@ def pytest_pycollect_makeitem(
             )
         )
     return items
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    group = parser.getgroup("morphtest")
+    group.addoption(
+        "--component",
+        action="append",
+        default=[],
+        metavar="NAME",
+        help="only run test suite tests whose depset contains this component or a "
+        "subclass of it (repeatable: all must be contained). Other tests are kept.",
+    )
+
+
+@pytest.hookimpl
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: list[pytest.Item]
+) -> None:
+    names: list[str] = config.getoption("component")
+    if not names:
+        return
+    try:
+        # components are only known after collection (all test modules imported)
+        components = [find_component(name) for name in names]
+    except UnknownComponentError as e:
+        raise pytest.UsageError(f"--component: {e}") from e
+
+    selected: list[pytest.Item] = []
+    deselected: list[pytest.Item] = []
+    for item in items:
+        # depset.components contains every implementation and all its bases
+        if isinstance(item, DepsetItem) and not all(
+            component in item.depset.components for component in components
+        ):
+            deselected.append(item)
+        else:
+            selected.append(item)
+
+    if deselected:
+        config.hook.pytest_deselected(items=deselected)
+        items[:] = selected

@@ -123,6 +123,9 @@ TestCase_Any on Device_Small with Chip_None
   other component.
 - Only a test suite named `ts` is collected. Repeated tests (`repeat=`) get a `#2`,
   `#3`, … suffix. pytest options work as usual, e.g. `-k Device_Small`.
+- `pytest --component Device_Small` runs only the tests whose depset contains that
+  component or a subclass of it (`--component TestCase_OnDevice` runs a whole group).
+  Repeat the option to require several components; other pytest tests are kept.
 - A suite without solution is reported as collection error of its file, with the
   diagnosis of `NoSolutionError`.
 - pytest only rewrites `assert` statements of test files. For detailed assertion

@@ -143,3 +143,55 @@ def test_select_tests_by_keyword(project: pytest.Pytester) -> None:
     result = project.runpytest_subprocess("-v", "-k", "Device_Small")
 
     result.assert_outcomes(passed=1, deselected=1)
+
+
+class TestComponentFilter:
+    SUITE = """
+    from components import Device, TestCase_Any, TestCase_NeedsChip
+    from morphtest import TestSuite
+
+    ts = TestSuite(Device)
+    ts(TestCase_Any)
+    ts(TestCase_NeedsChip)
+
+
+    def test_plain() -> None:
+        pass
+    """
+
+    def test_selects_tests_with_component(self, project: pytest.Pytester) -> None:
+        project.makepyfile(test_devices=self.SUITE)
+        result = project.runpytest_subprocess("-v", "--component", "Device_Small")
+
+        # test_plain is no test suite test and therefore kept
+        result.assert_outcomes(passed=2, deselected=2)
+        output = result.stdout.str()
+        assert "ts[TestCase_Any[Chip=Chip_None, Device=Device_Small]] PASSED" in output
+        assert "test_plain PASSED" in output
+
+    def test_matches_subclasses(self, project: pytest.Pytester) -> None:
+        project.makepyfile(test_devices=self.SUITE)
+        result = project.runpytest_subprocess("--component", "TestCase_OnDevice")
+
+        result.assert_outcomes(passed=4)
+
+    def test_all_components_must_match(self, project: pytest.Pytester) -> None:
+        project.makepyfile(test_devices=self.SUITE)
+        result = project.runpytest_subprocess(
+            "-v", "--component", "Chip_A", "--component", "TestCase_Any"
+        )
+
+        result.assert_outcomes(passed=2, deselected=2)
+        assert "ts[TestCase_Any[Chip=Chip_A, Device=Device_Big]] PASSED" in (
+            result.stdout.str()
+        )
+
+    def test_unknown_component_is_usage_error(self, project: pytest.Pytester) -> None:
+        project.makepyfile(test_devices=self.SUITE)
+        result = project.runpytest_subprocess("--component", "Device_Smal")
+
+        assert result.ret == pytest.ExitCode.USAGE_ERROR
+        assert (
+            "--component: unknown component Device_Smal (did you mean: Device_Small"
+            in result.stderr.str()
+        )

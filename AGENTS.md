@@ -31,10 +31,10 @@ uv run inv tests --testname X  # Run tests matching pattern X (pytest -k=X)
 
 - `morphtest/component.py`: `ComponentMeta`, `Component`, `Dependency`, `if_not_overwritten`, `mixin`, conditions (`AllOf`, `OneOf`), `ComponentDependencySet`, `ConditionsBuilder`
 - `morphtest/solver.py`: `ComponentSetSolver` (CNF generation + incremental solving per `AllOf` group, `components` = everything reachable from the entry), `PerEntry` (recommended components/group_by per entry implementation)
-- `morphtest/suite.py`: `TestCase` (root with abstract `run()` and the class variables `recommended_components`, `group_by`), generic `BaseTestSuite` (entry = first condition), `TestSuite` (entry `TestCase`, settings from its class variables, `run()` builds each `TestCase` and calls its `run()`), `NoSolutionError`, `group_depsets_by`
+- `morphtest/suite.py`: `TestCase` (root with abstract `run()` and the class variables `recommended_components`, `group_by`), generic `BaseTestSuite` (entry = first condition), `TestSuite` (entry `TestCase`, settings from its class variables, `run()` builds each `TestCase` and calls its `run()`), `NoSolutionError`, `group_depsets_by`, `find_component`/`components_by_name` (lookup by name among the components reachable from `TestCase`, shared by CLI and pytest plugin)
 - `morphtest/overview.py`: HTML component tree (`roots` allows several meta roots)
 - `morphtest/cli.py`: typer CLI `morphtest run/describe/overview` (console script and `python -m morphtest`). Targets are modules or files (`load_target`); conditions are parsed by name among the components reachable from `TestCase`. Setup errors exit with 2, failing tests with 1
-- `morphtest/pytest_plugin.py`: pytest plugin (`pytest11` entry point): a `TestSuite` named `ts` in a test module becomes one `DepsetItem` per depset (`ts[<depset>]`, repeats `#2`); `NoSolutionError` is a collection error
+- `morphtest/pytest_plugin.py`: pytest plugin (`pytest11` entry point): a `TestSuite` named `ts` in a test module becomes one `DepsetItem` per depset (`ts[<depset>]`, repeats `#2`); `NoSolutionError` is a collection error; `--component NAME` (repeatable, all must match) deselects `ts` tests whose depset lacks that component or a subclass
 - Public API is re-exported from `morphtest/__init__.py`. Keep `__all__` up to date
 
 ## Code Quality

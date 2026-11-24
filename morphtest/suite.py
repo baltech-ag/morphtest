@@ -1,4 +1,5 @@
 import abc
+import difflib
 from collections.abc import Iterable, Iterator, Sequence
 from contextlib import AbstractContextManager
 from typing import Any, ClassVar, Generic, TypedDict, TypeVar, cast, overload
@@ -248,6 +249,31 @@ class TestCase(Component, abc.ABC):
 
     @abc.abstractmethod
     def run(self) -> None: ...
+
+
+class UnknownComponentError(LookupError):
+    """no (or more than one) component of this name, with a hint in the message"""
+
+
+def components_by_name() -> dict[str, list[ComponentMeta]]:
+    """all components a TestSuite can use (reachable from TestCase), by name"""
+    components: dict[str, list[ComponentMeta]] = {}
+    for component in ComponentSetSolver(TestCase).components:
+        components.setdefault(str(component), []).append(component)
+    return components
+
+
+def find_component(name: str) -> ComponentMeta:
+    """the component reachable from TestCase with this name"""
+    components = components_by_name()
+    if name not in components:
+        close = difflib.get_close_matches(name, components, n=5)
+        hint = f" (did you mean: {', '.join(close)}?)" if close else ""
+        raise UnknownComponentError(f"unknown component {name}{hint}")
+    if len(candidates := components[name]) > 1:
+        modules = ", ".join(sorted(f"{c.__module__}.{c}" for c in candidates))
+        raise UnknownComponentError(f"ambiguous component {name}: {modules}")
+    return candidates[0]
 
 
 def _recommended_components(test_case: ComponentMeta) -> Sequence[ComponentMeta]:
