@@ -3,6 +3,8 @@ name = "morphtest"
 version = "0.1.0"
 description = "Test framework whose test matrices are resolved by a SAT solver"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
   "python-sat>=1.9.dev17",
@@ -31,7 +33,7 @@ python-preference = "only-managed"
 required-version = ">=0.11.20"
 
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=77"]  # SPDX license expression (PEP 639)
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]

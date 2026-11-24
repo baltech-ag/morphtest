@@ -401,3 +401,7 @@ with ts(TestCase_NeedsChip):  # node: has children, no depsets of its own
 writes an HTML page with the tree of all imported components below a meta root (roots,
 implementations, specializations, dependencies, mixins). `source_url` maps a component
 to a link (e.g. GitHub), `toggles` adds checkboxes that hide matching components.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
