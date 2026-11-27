@@ -37,6 +37,24 @@ uv run inv tests --testname X  # Run tests matching pattern X (pytest -k=X)
 - `morphtest/pytest_plugin.py`: pytest plugin (`pytest11` entry point): a `TestSuite` named `ts` in a test module becomes one `DepsetItem` per depset (`ts[<depset>]`, repeats `#2`); `NoSolutionError` is a collection error; `--component NAME` (repeatable, all must match) deselects `ts` tests whose depset lacks that component or a subclass
 - Public API is re-exported from `morphtest/__init__.py`. Keep `__all__` up to date
 
+## Release
+
+Released with the baltech Release Actions (`baltech-ag/ci-scripts`):
+`git push origin master:release-(major|minor|patch)` lets CI bump `VERSION`, commit
+`[release] morphtest X.Y.Z`, auto-merge the PR and push the tag `vX.Y.Z`.
+
+- `VERSION` is the only version source (`pyproject.toml` reads it via setuptools
+  `dynamic`, `uv.lock` holds no version). Never bump it by hand
+- The YouTrack version `morphtest-X.Y.Z` must exist in project ROBO before the release
+  (repo variables `PROJECT`, `VERSION_TEMPLATE`)
+- `.github/workflows/org-release-actions.yml` is an unchanged copy of the ci-scripts
+  template. `repo-release-actions-deploy.yml` runs lint/test, builds (version via the
+  ci-scripts action `pypi-version`) and publishes via the ci-scripts workflow
+  `release-actions-deploy-pypi.yml`: every push to TestPyPI as `X.Y.Z.dev<run_number>`,
+  the tag to PyPI
+- `tox.ini` only exists for the release actions (`tox -- apply-version --version=X`,
+  which only checks `VERSION`). `uv run inv build` builds sdist and wheel into `dist/`
+
 ## Code Quality
 
 - **ty** (Astral type checker): `incompatible-mutable-override` disabled, because subclasses narrow dependencies by redeclaring the field. ty does not require annotations, ruff's `ANN` rules do (only `ANN401` for `Any` is ignored). Suppress single ty errors with `# ty: ignore[rule]`, not mypy's `# type: ignore[code]`
