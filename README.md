@@ -8,7 +8,7 @@ combination and picks one best fit per combination you are interested in.
 ## Installation
 
 ```bash
-uv add git+https://github.com/baltech-ag/morphtest.git
+uv add morphtest  # or: pip install morphtest
 ```
 
 Requires Python 3.11 or newer.

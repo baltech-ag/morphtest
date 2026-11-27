@@ -1,9 +1,11 @@
+import re
 import sys
 from pathlib import Path
 
 from invoke import Context, task
 
 ProjectRootPath = Path(__file__).parent
+VersionFilePath = ProjectRootPath / "VERSION"
 
 
 @task()
@@ -37,6 +39,23 @@ def tests(ctx: Context, testname: str | None = None) -> None:
     ctx.run(f"pytest {ProjectRootPath}/tests -k={testname or ''}")
     # own process: components of the README must not mix with those of the unit tests
     ctx.run(f"pytest {ProjectRootPath}/README.md -k={testname or ''}")
+
+
+@task()
+def apply_version(_ctx: Context, version: str) -> None:
+    """checks the version the release actions wrote into VERSION"""
+    # pyproject.toml reads the version from VERSION, so there is nothing to apply
+    if not re.fullmatch(r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)", version):
+        sys.exit(f"{version!r} is no normalized X.Y.Z version")
+    file_version = VersionFilePath.read_text().strip()
+    if file_version != version:
+        sys.exit(f"VERSION contains {file_version!r} instead of {version!r}")
+
+
+@task()
+def build(ctx: Context) -> None:
+    """builds sdist and wheel into dist/"""
+    ctx.run(f"uv build --clear {ProjectRootPath}")
 
 
 @task(pre=[lint, tests])

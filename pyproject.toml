@@ -1,16 +1,38 @@
 [project]
 name = "morphtest"
-version = "0.1.0"
+# the release actions keep the version in VERSION
+dynamic = ["version"]
 description = "Test framework whose test matrices are resolved by a SAT solver"
 readme = "README.md"
+authors = [{ name = "Baltech AG", email = "info@baltech.de" }]
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
+keywords = ["testing", "pytest", "test matrix", "sat solver", "dependency injection"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Framework :: Pytest",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Software Development :: Testing",
+  "Typing :: Typed",
+]
 dependencies = [
   "python-sat",
   "typer",
   "typing_extensions",
 ]
+
+[project.urls]
+Homepage = "https://github.com/baltech-ag/morphtest"
+Source = "https://github.com/baltech-ag/morphtest"
+Issues = "https://github.com/baltech-ag/morphtest/issues"
 
 [project.entry-points.pytest11]
 morphtest = "morphtest.pytest_plugin"
@@ -35,6 +57,9 @@ required-version = ">=0.11.20"
 [build-system]
 requires = ["setuptools>=77"]  # SPDX license expression (PEP 639)
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = { file = "VERSION" }
 
 [tool.setuptools.packages.find]
 include = ["morphtest*"]

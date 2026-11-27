@@ -1,11 +1,33 @@
+# This workflow is called from the workflow org-release-actions.yml, do not change its filename
+# https://baltech-wiki.atlassian.net/wiki/spaces/THIR/pages/257785857/GitHub#GitHub-Workflows-f%C3%BCr-Releasemanagement-einrichten
 name: Release Actions - Deploy build
-on: [push]
+on:
+  workflow_call:
+    inputs:
+      release-stage: # one of branch-created|pr-merged|tag-pushed
+        type: string
+        required: true
+      deploy-mode: # one of development|release
+        type: string
+        required: true
+      project-name:
+        type: string
+        required: true
+      sub-project-id:
+        type: string
+        required: false
+      version:
+        type: string
+        required: true
+      version-file:
+        type: string
+        required: true
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: uv run inv lint --no-fix
 
@@ -19,6 +41,38 @@ jobs:
         # oldest and newest supported version
         python: ["3.11", "3.14"]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: uv run --python ${{ matrix.python }} inv tests
+
+  build:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      # development: <version>.dev<run_number>, release: <version>
+      - id: version
+        uses: baltech-ag/ci-scripts/actions/pypi-version@master
+        with:
+          deploy-mode: ${{ inputs.deploy-mode }}
+          version-file: ${{ inputs.version-file }}
+      - run: uv run inv build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+          retention-days: 5
+          if-no-files-found: error
+
+  # development: TestPyPI, release: PyPI
+  publish:
+    needs: [build]
+    uses: baltech-ag/ci-scripts/.github/workflows/release-actions-deploy-pypi.yml@master
+    with:
+      deploy-mode: ${{ inputs.deploy-mode }}
+      artifact-name: dist
+      package: morphtest
+    secrets: inherit
